@@ -19,12 +19,12 @@ package org.apache.dubbo.common.extension.ext8_add.impl;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.Adaptive;
 import org.apache.dubbo.common.extension.ExtensionLoader;
-import org.apache.dubbo.common.extension.ext8_add.AddExt3;
+import org.apache.dubbo.common.extension.ext8_add.AddExt2;
 
-@Adaptive("x1")
-public class AddExt3_ManualAdaptive implements AddExt3 {
+@Adaptive
+public class AddExt2_ManualAdaptive3 implements AddExt2 {
     public String echo(URL url, String s) {
-        AddExt3 addExt1 = ExtensionLoader.getExtensionLoader(AddExt3.class).getExtension(url.getParameter("add.ext3"));
+        AddExt2 addExt1 = ExtensionLoader.getExtensionLoader(AddExt2.class).getExtension(url.getParameter("add.ext2"));
         return addExt1.echo(url, s);
     }
 }

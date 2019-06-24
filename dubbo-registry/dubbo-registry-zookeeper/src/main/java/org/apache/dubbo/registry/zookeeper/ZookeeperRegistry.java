@@ -116,15 +116,19 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doSubscribe(final URL url, final NotifyListener listener) {
         try {
+            // 是否订阅 * 全部
             if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+                // 获取 /dubbo 根路径
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                 if (listeners == null) {
                     zkListeners.putIfAbsent(url, new ConcurrentHashMap<>());
                     listeners = zkListeners.get(url);
                 }
+
                 ChildListener zkListener = listeners.get(listener);
                 if (zkListener == null) {
+                    // 订阅 listeners 所有监听
                     listeners.putIfAbsent(listener, (parentPath, currentChilds) -> {
                         for (String child : currentChilds) {
                             child = URL.decode(child);
@@ -150,16 +154,22 @@ public class ZookeeperRegistry extends FailbackRegistry {
             } else {
                 List<URL> urls = new ArrayList<>();
                 for (String path : toCategoriesPath(url)) {
+
+                    // 获取 url 监听器，和 children url
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                     if (listeners == null) {
                         zkListeners.putIfAbsent(url, new ConcurrentHashMap<>());
                         listeners = zkListeners.get(url);
                     }
+
+                    // 获取当前 url 监听器
                     ChildListener zkListener = listeners.get(listener);
                     if (zkListener == null) {
                         listeners.putIfAbsent(listener, (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds)));
                         zkListener = listeners.get(listener);
                     }
+
+                    // 去创建 zkd 的 path，避免未创建
                     zkClient.create(path, false);
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {
@@ -218,6 +228,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     private String toRootPath() {
+        // /dubbo 为根路径
         return root;
     }
 

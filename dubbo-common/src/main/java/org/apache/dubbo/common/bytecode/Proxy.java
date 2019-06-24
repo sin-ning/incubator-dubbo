@@ -77,6 +77,7 @@ public abstract class Proxy {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
+        // 获取 class[] 完整的类名
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < ics.length; i++) {
             String itf = ics[i].getName();

@@ -21,7 +21,6 @@ import org.apache.dubbo.common.extension.Adaptive;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.extension.adaptive.HasAdaptiveExt;
 
-@Adaptive
 public class HasAdaptiveExt_ManualAdaptive implements HasAdaptiveExt {
     public String echo(URL url, String s) {
         HasAdaptiveExt addExt1 = ExtensionLoader.getExtensionLoader(HasAdaptiveExt.class).getExtension(url.getParameter("key"));

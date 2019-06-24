@@ -1,0 +1,4 @@
+run1=com.joysrun.extension.t1.Run1
+run2=com.joysrun.extension.t1.Run2
+filterRun=com.joysrun.extension.t1.FilterRunWrapper
+runGo=com.joysrun.extension.t1.RunGoWrapper

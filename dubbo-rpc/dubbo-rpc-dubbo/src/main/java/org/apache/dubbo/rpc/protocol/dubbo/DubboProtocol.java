@@ -285,7 +285,9 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+        // 打开服务
         openServer(url);
+        // 优化序列化
         optimizeSerialization(url);
 
         return exporter;
@@ -383,6 +385,7 @@ public class DubboProtocol extends AbstractProtocol {
 
     @Override
     public <T> Invoker<T> refer(Class<T> serviceType, URL url) throws RpcException {
+        // 优化序列化
         optimizeSerialization(url);
 
         // create rpc invoker.
@@ -399,11 +402,14 @@ public class DubboProtocol extends AbstractProtocol {
 
         int connections = url.getParameter(Constants.CONNECTIONS_KEY, 0);
         List<ReferenceCountExchangeClient> shareClients = null;
+
+        // 如果未配置，则连接是共享的，否则，一个服务有一个连接
         // if not configured, connection is shared, otherwise, one connection for one service
         if (connections == 0) {
             useShareConnect = true;
 
             /**
+             * XML配置的优先级应该高于属性。
              * The xml configuration should have a higher priority than properties.
              */
             String shareConnectionsStr = url.getParameter(Constants.SHARE_CONNECTIONS_KEY, (String) null);
@@ -482,6 +488,7 @@ public class DubboProtocol extends AbstractProtocol {
 
     /**
      * Check if the client list is all available
+     * 检查客户端列表是否全部可用
      *
      * @param referenceCountExchangeClients
      * @return true-available，false-unavailable
@@ -554,10 +561,14 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private ExchangeClient initClient(URL url) {
 
+        // 客户端类型，默认为 netty
         // client type setting.
         String str = url.getParameter(Constants.CLIENT_KEY, url.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_CLIENT));
 
+        // 解析器，默认为 dubbo
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
+
+        // 默认开启 心跳
         // enable heartbeat by default
         url = url.addParameterIfAbsent(Constants.HEARTBEAT_KEY, String.valueOf(Constants.DEFAULT_HEARTBEAT));
 
@@ -569,10 +580,12 @@ public class DubboProtocol extends AbstractProtocol {
 
         ExchangeClient client;
         try {
+            // 是否 懒加载
             // connection should be lazy
+
+            // requestHandler  分为两种 default 和 simple
             if (url.getParameter(Constants.LAZY_CONNECT_KEY, false)) {
                 client = new LazyConnectExchangeClient(url, requestHandler);
-
             } else {
                 client = Exchangers.connect(url, requestHandler);
             }

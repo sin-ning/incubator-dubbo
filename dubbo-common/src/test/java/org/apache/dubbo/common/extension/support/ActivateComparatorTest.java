@@ -16,7 +16,6 @@
  */
 package org.apache.dubbo.common.extension.support;
 
-import org.apache.dubbo.common.extension.Activate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +26,7 @@ import java.util.List;
 public class ActivateComparatorTest {
 
     @Test
-    public void testActivateComparator(){
+    public void testActivateComparator() {
         Filter1 f1 = new Filter1();
         Filter2 f2 = new Filter2();
         Filter3 f3 = new Filter3();

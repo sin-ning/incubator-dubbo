@@ -14,17 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.dubbo.common.extension.ext8_add.impl;
+package org.apache.dubbo.common.extension.ext6_wrap.impl;
 
 import org.apache.dubbo.common.URL;
-import org.apache.dubbo.common.extension.Adaptive;
-import org.apache.dubbo.common.extension.ExtensionLoader;
-import org.apache.dubbo.common.extension.ext8_add.AddExt3;
+import org.apache.dubbo.common.extension.ext6_wrap.WrappedExt;
 
-@Adaptive("x1")
-public class AddExt3_ManualAdaptive implements AddExt3 {
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Ext5Wrapper3 implements WrappedExt {
+    public static AtomicInteger echoCount = new AtomicInteger();
+    WrappedExt instance;
+
+    public Ext5Wrapper3(WrappedExt instance) {
+        this.instance = instance;
+    }
+
     public String echo(URL url, String s) {
-        AddExt3 addExt1 = ExtensionLoader.getExtensionLoader(AddExt3.class).getExtension(url.getParameter("add.ext3"));
-        return addExt1.echo(url, s);
+        echoCount.incrementAndGet();
+        return instance.echo(url, s);
     }
 }

@@ -31,6 +31,7 @@ import org.apache.dubbo.common.utils.ClassUtils;
 import org.apache.dubbo.common.utils.ReflectUtils;
 import org.apache.dubbo.common.utils.StringUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -338,6 +339,13 @@ public final class ClassGenerator {
                                 CtNewConstructor.make(code.replaceFirst(SIMPLE_NAME_TAG, sn[sn.length - 1]), mCtc));
                     }
                 }
+            }
+
+            // 加一段代码，来输出编译的文件，获得源代码
+            try {
+                mCtc.writeFile("/Users/Sin/Downloads/javassist/");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             return mCtc.toClass(loader, pd);
         } catch (RuntimeException e) {

@@ -179,7 +179,7 @@ public class RegistryProtocol implements Protocol {
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
 
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
-        //export invoker
+        // export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
         // url to registry
@@ -309,7 +309,6 @@ public class RegistryProtocol implements Protocol {
                     , Constants.COMMA_SPLIT_PATTERN.split(extra_keys));
             return URL.valueOf(providerUrl, paramsToRegistry, providerUrl.getParameter(METHODS_KEY, (String[]) null));
         }
-
     }
 
     private URL getSubscribedOverrideUrl(URL registeredProviderUrl) {

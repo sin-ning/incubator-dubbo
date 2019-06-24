@@ -81,6 +81,7 @@ public abstract class AbstractRegistry implements Registry {
     private File file;
 
     public AbstractRegistry(URL url) {
+        // 保存一下 registerUrl
         setUrl(url);
         // Start file save timer
         syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, false);
@@ -95,6 +96,8 @@ public abstract class AbstractRegistry implements Registry {
             }
         }
         this.file = file;
+        // 启动注册中心时
+        // 我们先读取 cache 文件，避免注册中心容错处理
         // When starting the subscription center,
         // we need to read the local cache file for future Registry fault tolerance processing.
         loadProperties();

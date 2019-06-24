@@ -69,18 +69,26 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
     @Override
     protected Result doInvoke(final Invocation invocation) throws Throwable {
         RpcInvocation inv = (RpcInvocation) invocation;
+
+        // 方法名称
         final String methodName = RpcUtils.getMethodName(invocation);
+
+        // 设置附加参数
         inv.setAttachment(Constants.PATH_KEY, getUrl().getPath());
         inv.setAttachment(Constants.VERSION_KEY, version);
 
+        // 获取 ExchangeClient
         ExchangeClient currentClient;
         if (clients.length == 1) {
             currentClient = clients[0];
         } else {
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
+
         try {
+            // 是否异步处理
             boolean isAsync = RpcUtils.isAsync(getUrl(), invocation);
+            // 异步处理 future 形式回调
             boolean isAsyncFuture = RpcUtils.isReturnTypeFuture(inv);
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);
             int timeout = getUrl().getMethodParameter(methodName, Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
@@ -136,6 +144,7 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
         if (super.isDestroyed()) {
             return;
         } else {
+            // 重复检查以避免重复关闭
             // double check to avoid dup close
             destroyLock.lock();
             try {

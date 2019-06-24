@@ -27,6 +27,8 @@ import org.apache.dubbo.common.extension.SPI;
 public interface Protocol {
 
     /**
+     * 当用户不配置端口时获取默认端口。
+     *
      * Get default port when user doesn't config the port.
      *
      * @return default port
@@ -34,6 +36,10 @@ public interface Protocol {
     int getDefaultPort();
 
     /**
+     * 1。协议应在收到请求后记录请求源地址：
+     * 2。export（）必须是等幂的，也就是说，在导出同一个URL时，调用一次和调用两次没有区别
+     * 三。调用程序实例由框架传入，协议不需要关心<br>
+     *
      * Export service for remote invocation: <br>
      * 1. Protocol should record request source address after receive a request:
      * RpcContext.getContext().setRemoteAddress();<br>
@@ -50,6 +56,11 @@ public interface Protocol {
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 
     /**
+     *
+     * 1。当用户调用从“refer（）”调用返回的“invoke（）”对象的“invoke（）”方法时，协议需要相应地执行“invoke（）”对象的“invoke（）”方法<br>
+     * 2。协议负责实现从'refer（）'返回的'invoker'。一般来说，协议在“invoker”实现中发送远程请求。<BR>
+     * 三。当在url中设置了check=false时，实现不能抛出异常，而是在连接失败时尝试恢复。
+     *
      * Refer a remote service: <br>
      * 1. When user calls `invoke()` method of `Invoker` object which's returned from `refer()` call, the protocol
      * needs to correspondingly execute `invoke()` method of `Invoker` object <br>

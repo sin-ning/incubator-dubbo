@@ -118,7 +118,6 @@ public class DubboInvokerAvilableTest {
         ExchangeClient[] clients = getClients(invoker);
         clients[0].close();
         Assertions.assertEquals(false, invoker.isAvailable());
-
     }
 
     @Test

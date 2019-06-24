@@ -49,6 +49,13 @@ public class ExtensionLoader_Adaptive_Test {
     public void test_useAdaptiveClass() throws Exception {
         ExtensionLoader<HasAdaptiveExt> loader = ExtensionLoader.getExtensionLoader(HasAdaptiveExt.class);
         HasAdaptiveExt ext = loader.getAdaptiveExtension();
+
+        Map<String, String> map = new HashMap<String, String>();
+        URL url = new URL("p1", "1.2.3.4", 1010, "path1", map);
+        url = url.addParameter("key", "impl1"); // note: URL is value's type
+
+        String className = ext.echo(url, "impl1");
+        System.err.println(className);
         assertTrue(ext instanceof HasAdaptiveExt_ManualAdaptive);
     }
 

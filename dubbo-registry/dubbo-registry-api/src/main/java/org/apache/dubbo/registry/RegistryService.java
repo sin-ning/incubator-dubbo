@@ -21,6 +21,8 @@ import org.apache.dubbo.common.URL;
 import java.util.List;
 
 /**
+ * 注册表服务。（SPI、原型、螺纹安全）
+ *
  * RegistryService. (SPI, Prototype, ThreadSafe)
  *
  * @see org.apache.dubbo.registry.Registry
@@ -29,6 +31,19 @@ import java.util.List;
 public interface RegistryService {
 
     /**
+     * 注册数据，例如：提供者服务、使用者地址、路由规则、覆盖规则和其他数据。
+     *
+     * 1。当URL设置check=false参数时。当注册失败时，不会在后台引发并重试异常。否则，将引发异常。
+     *
+     * 2。当url设置dynamic=false参数时，需要进行持久的存储，否则注册者出现异常退出时，需要自动删除。
+     *
+     * 3。当url设置category=routers时，表示分类存储，默认分类为providers，分类部分可以通知数据。
+     *
+     * 4。当注册表重新启动时，网络抖动，数据不能丢失，包括自动从断线删除数据。
+     *
+     * 5。允许具有相同URL但参数不同的URL共存，它们不能相互覆盖。
+     *
+     *
      * Register data, such as : provider service, consumer address, route rule, override rule and other data.
      * <p>
      * Registering is required to support the contract:<br>
@@ -83,6 +98,8 @@ public interface RegistryService {
     void unsubscribe(URL url, NotifyListener listener);
 
     /**
+     * 查询符合条件的注册数据。对应于订阅的推送模式，这是拉模式，只返回一个结果。
+     *
      * Query the registered data that matches the conditions. Corresponding to the push mode of the subscription, this is the pull mode and returns only one result.
      *
      * @param url Query condition, is not allowed to be empty, e.g. consumer://10.20.153.10/org.apache.dubbo.foo.BarService?version=1.0.0&application=kylin

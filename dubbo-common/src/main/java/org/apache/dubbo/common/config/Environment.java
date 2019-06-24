@@ -126,6 +126,9 @@ public class Environment {
     }
 
     private static String toKey(String prefix, String id) {
+        // 获取 key，两种情况
+        // prefix 存在： 就拼接 prefix + id
+        // prefix 存在：返回 dubbo
         StringBuilder sb = new StringBuilder();
         if (StringUtils.isNotEmpty(prefix)) {
             sb.append(prefix);

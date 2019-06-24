@@ -28,6 +28,38 @@ import java.util.concurrent.CompletableFuture;
  */
 
 public class DemoServiceImpl implements DemoService {
+
+    public String gloubName;
+
+    private String name;
+
+    private String password;
+
+    public String getName() {
+        return name;
+    }
+
+    public DemoServiceImpl setName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public DemoServiceImpl setPassword(String password) {
+        this.password = password;
+        return this;
+    }
+
+    public String showName(String name, String password) {
+        return name + "$" + password;
+    }
+
+
+    // 构造器
+
     public DemoServiceImpl() {
         super();
     }

@@ -123,12 +123,12 @@ public class ZookeeperRegistryTest {
         assertThat(lookup.size(), is(1));
     }
 
-    @Disabled
-    @Test
     /*
       This UT is unstable, consider remove it later.
       @see https://github.com/apache/incubator-dubbo/issues/1787
      */
+    @Disabled
+    @Test
     public void testStatusChecker() {
         RegistryStatusChecker registryStatusChecker = new RegistryStatusChecker();
         Status status = registryStatusChecker.check();

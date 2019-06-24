@@ -29,6 +29,8 @@ public interface DemoService {
 
     long timestamp();
 
+    String showName(String name, String password);
+
     String getThreadName();
 
     int getSize(String[] strs);

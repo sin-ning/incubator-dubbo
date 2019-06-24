@@ -19,13 +19,7 @@ package org.apache.dubbo.common.extension;
 import org.apache.dubbo.common.Constants;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.activate.ActivateExt1;
-import org.apache.dubbo.common.extension.activate.impl.ActivateExt1Impl1;
-import org.apache.dubbo.common.extension.activate.impl.GroupActivateExtImpl;
-import org.apache.dubbo.common.extension.activate.impl.OldActivateExt1Impl2;
-import org.apache.dubbo.common.extension.activate.impl.OldActivateExt1Impl3;
-import org.apache.dubbo.common.extension.activate.impl.OrderActivateExtImpl1;
-import org.apache.dubbo.common.extension.activate.impl.OrderActivateExtImpl2;
-import org.apache.dubbo.common.extension.activate.impl.ValueActivateExtImpl;
+import org.apache.dubbo.common.extension.activate.impl.*;
 import org.apache.dubbo.common.extension.ext1.SimpleExt;
 import org.apache.dubbo.common.extension.ext1.impl.SimpleExtImpl1;
 import org.apache.dubbo.common.extension.ext1.impl.SimpleExtImpl2;
@@ -38,18 +32,11 @@ import org.apache.dubbo.common.extension.ext8_add.AddExt1;
 import org.apache.dubbo.common.extension.ext8_add.AddExt2;
 import org.apache.dubbo.common.extension.ext8_add.AddExt3;
 import org.apache.dubbo.common.extension.ext8_add.AddExt4;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt1Impl1;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt1_ManualAdaptive;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt1_ManualAdd1;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt1_ManualAdd2;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt2_ManualAdaptive;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt3_ManualAdaptive;
-import org.apache.dubbo.common.extension.ext8_add.impl.AddExt4_ManualAdaptive;
+import org.apache.dubbo.common.extension.ext8_add.impl.*;
 import org.apache.dubbo.common.extension.ext9_empty.Ext9Empty;
 import org.apache.dubbo.common.extension.ext9_empty.impl.Ext9EmptyImpl;
 import org.apache.dubbo.common.extension.injection.InjectExt;
 import org.apache.dubbo.common.extension.injection.impl.InjectExtImpl;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,18 +44,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExtensionLoaderTest {
+
     @Test
     public void test_getExtensionLoader_Null() throws Exception {
         try {
@@ -135,7 +117,6 @@ public class ExtensionLoaderTest {
 
         WrappedExt impl2 = ExtensionLoader.getExtensionLoader(WrappedExt.class).getExtension("impl2");
         assertThat(impl2, anyOf(instanceOf(Ext5Wrapper1.class), instanceOf(Ext5Wrapper2.class)));
-
 
         URL url = new URL("p1", "1.2.3.4", 1010, "path1");
         int echoCount1 = Ext5Wrapper1.echoCount.get();
@@ -412,7 +393,7 @@ public class ExtensionLoaderTest {
     @Test
     public void testLoadDefaultActivateExtension() throws Exception {
         // test default
-        URL url = URL.valueOf("test://localhost/test?ext=order1,default");
+        URL url = URL.valueOf("test://localhost/test?ext=-order1,default");
         List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
                 .getActivateExtension(url, "ext", "default_group");
         Assertions.assertEquals(2, list.size());
@@ -436,5 +417,4 @@ public class ExtensionLoaderTest {
         Assertions.assertNull(injectExtImpl.getSimpleExt1());
         Assertions.assertNull(injectExtImpl.getGenericType());
     }
-
 }

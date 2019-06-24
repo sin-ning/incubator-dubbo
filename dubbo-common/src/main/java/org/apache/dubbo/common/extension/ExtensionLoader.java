@@ -205,6 +205,8 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<>();
         List<String> names = values == null ? new ArrayList<>(0) : Arrays.asList(values);
+
+        // 这个 if，判断的是 -default，'-' 是为了方便操作特价的，代表不适用
         if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
             getExtensionClasses();
             for (Map.Entry<String, Object> entry : cachedActivates.entrySet()) {
@@ -214,15 +216,20 @@ public class ExtensionLoader<T> {
                 String[] activateGroup, activateValue;
 
                 if (activate instanceof Activate) {
+                    // 2.7.0 以后
                     activateGroup = ((Activate) activate).group();
                     activateValue = ((Activate) activate).value();
                 } else if (activate instanceof com.alibaba.dubbo.common.extension.Activate) {
+                    // 2.7.0 之前 老版本兼容
                     activateGroup = ((com.alibaba.dubbo.common.extension.Activate) activate).group();
                     activateValue = ((com.alibaba.dubbo.common.extension.Activate) activate).value();
                 } else {
                     continue;
                 }
+
+                // 匹配 需要激活的 group、并排除不是 names 中的 name
                 if (isMatchGroup(group, activateGroup)) {
+                    // 其实这个可以放到 if 里面
                     T ext = getExtension(name);
                     if (!names.contains(name)
                             && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
@@ -231,13 +238,21 @@ public class ExtensionLoader<T> {
                     }
                 }
             }
+
+            // 这里是 activate 排序规则, names 不参与排序，names 跟 URL 中 default 值有关
+            // default 值在 URL 中: test://l
+            // ocalhost/test?ext=order1,default
             exts.sort(ActivateComparator.COMPARATOR);
         }
+
+        // 找我们需要使用的 name(SPI 文件加载的 cacheName)
         List<T> usrs = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
             if (!name.startsWith(Constants.REMOVE_VALUE_PREFIX)
                     && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)) {
+
+                // 注意这个判断，跟 default 顺序有很大关系
                 if (Constants.DEFAULT_KEY.equals(name)) {
                     if (!usrs.isEmpty()) {
                         exts.addAll(0, usrs);
@@ -249,6 +264,8 @@ public class ExtensionLoader<T> {
                 }
             }
         }
+
+        // 注意这个判断，跟 default 排序有很大关系
         if (!usrs.isEmpty()) {
             exts.addAll(usrs);
         }
@@ -519,6 +536,7 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     private T createExtension(String name) {
+        // (1) 获取“扩展类” 没有直接异常了(这个地方已经加载过 SPI 文件了)
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw findException(name);
@@ -533,6 +551,9 @@ public class ExtensionLoader<T> {
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (CollectionUtils.isNotEmpty(wrapperClasses)) {
                 for (Class<?> wrapperClass : wrapperClasses) {
+                    // (2) 这个是重点 (这里是 wrapper 调用链的创建)
+                    // - wrapper 是在 loadClass 通过加载 SPI 文件缓存的
+                    // - injectExtension(调用链在这创建的)
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
@@ -640,6 +661,8 @@ public class ExtensionLoader<T> {
     }
 
     /**
+     * 提取并缓存默认扩展名（如果存在）
+     *
      * extract and cache default extension name if exists
      */
     private void cacheDefaultExtensionName() {
