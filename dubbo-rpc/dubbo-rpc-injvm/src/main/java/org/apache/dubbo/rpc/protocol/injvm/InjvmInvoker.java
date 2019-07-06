@@ -42,6 +42,11 @@ class InjvmInvoker<T> extends AbstractInvoker<T> {
         this.exporterMap = exporterMap;
     }
 
+    /**
+     * 服务是否活跃
+     *
+     * @return
+     */
     @Override
     public boolean isAvailable() {
         InjvmExporter<?> exporter = (InjvmExporter<?>) exporterMap.get(key);
