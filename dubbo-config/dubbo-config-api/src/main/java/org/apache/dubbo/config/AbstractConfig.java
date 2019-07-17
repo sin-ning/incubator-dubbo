@@ -219,7 +219,7 @@ public abstract class AbstractConfig implements Serializable {
                         && method.getParameterTypes().length == 0
                         && method.getReturnType() == Map.class) {
 
-                    // 出书参数 getParameters 是 map 形式
+                    // 出现 getParameters 是 map 形式（合并）
                     Map<String, String> map = (Map<String, String>) method.invoke(config, new Object[0]);
                     if (map != null && map.size() > 0) {
 

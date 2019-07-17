@@ -28,16 +28,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * 路由链
+ *
  * Router chain
  */
 public class RouterChain<T> {
 
+    // 注册表中按方法名分类的地址的完整列表。
     // full list of addresses from registry, classified by method name.
     private List<Invoker<T>> invokers = Collections.emptyList();
 
+    // 包含所有路由器，每次“route://”URL更改时重建。
     // containing all routers, reconstruct every time 'route://' urls change.
     private volatile List<Router> routers = Collections.emptyList();
 
+    // 固定路由器实例：configConditionRouter、tagRouter，例如，每个实例的规则可能会更改，但实例将永远不会删除或重新创建。
     // Fixed router instances: ConfigConditionRouter, TagRouter, e.g., the rule for each instance may change but the
     // instance will never delete or recreate.
     private List<Router> builtinRouters = Collections.emptyList();

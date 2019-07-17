@@ -166,6 +166,8 @@ public class RegistryProtocol implements Protocol {
 
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
+
+        // 注册地址, 和服务提供者 bind 地址
         URL registryUrl = getRegistryUrl(originInvoker);
         // url to export locally
         URL providerUrl = getProviderUrl(originInvoker);
@@ -174,14 +176,19 @@ public class RegistryProtocol implements Protocol {
         // FIXME When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call
         //  the same service. Because the subscribed is cached key with the name of the service, it causes the
         //  subscription information to cover.
+
+        // 获取
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
 
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
+
+        // 暴露对于的远程服务
         // export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
+        // 注册服务
         // url to registry
         final Registry registry = getRegistry(originInvoker);
         final URL registeredProviderUrl = getRegisteredProviderUrl(providerUrl, registryUrl);
@@ -194,6 +201,7 @@ public class RegistryProtocol implements Protocol {
             providerInvokerWrapper.setReg(true);
         }
 
+        // 已弃用！订阅2.6.x或更高版本中的覆盖规则。
         // Deprecated! Subscribe to override rules in 2.6.x or before.
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 

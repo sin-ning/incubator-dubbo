@@ -77,6 +77,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final long serialVersionUID = 3033787999037024738L;
 
     /**
+     * ps: Dubbo SPI 加载 Protocol 自适应类（获得的是 DubboProtocol）。
+     *
      * The {@link Protocol} implementation with adaptive functionality,it will be different in different scenarios.
      * A particular {@link Protocol} implementation is determined by the protocol attribute in the {@link URL}.
      * For example:
@@ -93,6 +95,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private static final Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
 
     /**
+     * ps: Dubbo SPI 加载 Protocol 自适应类（获得的是 javassist）。
+     *
      * A {@link ProxyFactory} implementation that will generate a exported service proxy,the JavassistProxyFactory is its
      * default implementation
      */
@@ -532,6 +536,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put(Constants.TOKEN_KEY, token);
             }
         }
+
+        // 暴露 service
         // export service
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
@@ -544,21 +550,32 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         }
 
         String scope = url.getParameter(Constants.SCOPE_KEY);
+
+        // scope = 不设置则: remote + local
+        // scope = null :
+        // scope = remote or local : 对于的协议
         // don't export when none is configured
         if (!Constants.SCOPE_NONE.equalsIgnoreCase(scope)) {
 
+            // 如果配置不是远程的，则导出到本地（仅当配置是远程的时导出到远程）
             // export to local if the config is not remote (export to remote only when config is remote)
             if (!Constants.SCOPE_REMOTE.equalsIgnoreCase(scope)) {
+                // 本地暴露
                 exportLocal(url);
             }
+
+            // 如果配置不是本地的，则导出到远程（仅当配置是本地的时导出到本地）
             // export to remote if the config is not local (export to local only when config is local)
             if (!Constants.SCOPE_LOCAL.equalsIgnoreCase(scope)) {
                 if (!isOnlyInJvm() && logger.isInfoEnabled()) {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                 }
+
+                // registryURLs 注册中心地址
                 if (CollectionUtils.isNotEmpty(registryURLs)) {
                     for (URL registryURL : registryURLs) {
-                        //if protocol is only injvm ,not register
+                        // injvm ，没有注册中心
+                        // if protocol is only injvm ,not register
                         if (Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
                             continue;
                         }

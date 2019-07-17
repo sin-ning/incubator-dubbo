@@ -158,6 +158,8 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     protected String tag;
 
     /**
+     * 检查注册表配置是否存在，然后将其转换为 {@link RegistryConfig}
+     *
      * Check whether the registry config is exists, and then conversion it to {@link RegistryConfig}
      */
     protected void checkRegistry() {
@@ -451,15 +453,22 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         }
 
         String normalizedMock = MockInvoker.normalizeMock(mock);
+
+        // return 开头的
         if (normalizedMock.startsWith(Constants.RETURN_PREFIX)) {
             normalizedMock = normalizedMock.substring(Constants.RETURN_PREFIX.length()).trim();
             try {
-                //Check whether the mock value is legal, if it is illegal, throw exception
+                // 转换数据，将 string 转换对于的 value，true false json 等对象形式
+
+                // 检查模拟值是否合法，如果非法，则引发异常
+                // Check whether the mock value is legal, if it is illegal, throw exception
                 MockInvoker.parseMockValue(normalizedMock);
             } catch (Exception e) {
                 throw new IllegalStateException("Illegal mock return in <dubbo:service/reference ... " +
                         "mock=\"" + mock + "\" />");
             }
+
+            // throw 开头的
         } else if (normalizedMock.startsWith(Constants.THROW_PREFIX)) {
             normalizedMock = normalizedMock.substring(Constants.THROW_PREFIX.length()).trim();
             if (ConfigUtils.isNotEmpty(normalizedMock)) {
@@ -472,12 +481,14 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 }
             }
         } else {
-            //Check whether the mock class is a implementation of the interfaceClass, and if it has a default constructor
+            // 检查模拟类是否是InterfaceClass的实现，以及它是否具有默认构造函数
+            // Check whether the mock class is a implementation of the interfaceClass, and if it has a default constructor
             MockInvoker.getMockObject(normalizedMock, interfaceClass);
         }
     }
 
     /**
+     * 存根的合法性检查，请注意：本地将不推荐使用，并替换为<code>stub<code>
      * Legitimacy check of stub, note that: the local will deprecated, and replace with <code>stub</code>
      *
      * @param interfaceClass for provider side, it is the {@link Class} of the service that will be exported; for consumer

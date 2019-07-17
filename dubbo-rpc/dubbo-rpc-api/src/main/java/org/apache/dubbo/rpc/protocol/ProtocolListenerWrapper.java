@@ -51,9 +51,14 @@ public class ProtocolListenerWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+
+        // 注册中心，不监听
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+
+        // unmodifiableList 不可修改的集合
+        // 从 extensionLoad 获取自适应类，然后获取 @Activate 激活方法
         return new ListenerExporterWrapper<T>(protocol.export(invoker),
                 Collections.unmodifiableList(ExtensionLoader.getExtensionLoader(ExporterListener.class)
                         .getActivateExtension(invoker.getUrl(), Constants.EXPORTER_LISTENER_KEY)));

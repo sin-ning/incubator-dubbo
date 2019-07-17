@@ -56,7 +56,6 @@ public interface Protocol {
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 
     /**
-     *
      * 1。当用户调用从“refer（）”调用返回的“invoke（）”对象的“invoke（）”方法时，协议需要相应地执行“invoke（）”对象的“invoke（）”方法<br>
      * 2。协议负责实现从'refer（）'返回的'invoker'。一般来说，协议在“invoker”实现中发送远程请求。<BR>
      * 三。当在url中设置了check=false时，实现不能抛出异常，而是在连接失败时尝试恢复。
@@ -79,6 +78,12 @@ public interface Protocol {
     <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException;
 
     /**
+     * 销毁 protocol
+     *
+     * 1、关闭所有 services 和 refers
+     * 2、释放所有资源，和 链接、端口 等。
+     * 3、协议可以继续导出并引用新服务，即使在它被破坏之后。
+     *
      * Destroy protocol: <br>
      * 1. Cancel all services this protocol exports and refers <br>
      * 2. Release all occupied resources, for example: connection, port, etc. <br>

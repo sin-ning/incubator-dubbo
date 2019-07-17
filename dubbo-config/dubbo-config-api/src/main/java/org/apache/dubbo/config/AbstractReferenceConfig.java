@@ -34,6 +34,8 @@ public abstract class AbstractReferenceConfig extends AbstractInterfaceConfig {
     // ======== Reference config default values, will take effect if reference's attribute is not set  ========
 
     /**
+     * 检查服务提供程序是否存在，如果不存在，将很快失败。
+     *
      * Check if service provider exists, if not exists, it will be fast fail
      */
     protected Boolean check;

@@ -95,6 +95,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private static final ProxyFactory PROXY_FACTORY = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
     /**
+     * 引用服务的URL
+     *
      * The url of the reference service
      */
     private final List<URL> urls = new ArrayList<URL>();
@@ -191,6 +193,9 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     /**
+     * 在创建此类实例之后，在使用其他配置模块中的任何属性之前，应立即调用此方法。
+     * 检查是否正确创建了每个配置模块，并在必要时覆盖其属性。
+     *
      * This method should be called right after the creation of this class's instance, before any property in other config modules is used.
      * Check each config modules are created properly and override their properties if necessary.
      */
@@ -223,6 +228,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     public synchronized T get() {
+        // 这里返回的 ref 是一个 proxy 代理对象
         checkAndUpdateSubConfigs();
 
         if (destroyed) {
@@ -252,16 +258,23 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     private void init() {
+
+        // 初始化了直接 return
         if (initialized) {
             return;
         }
+
+        // 标记初始化过了
         initialized = true;
+        // 检查 local不推荐使用，会替换成 sub
         checkStubAndLocal(interfaceClass);
+        // 检查 mock
         checkMock(interfaceClass);
         Map<String, String> map = new HashMap<String, String>();
 
         map.put(Constants.SIDE_KEY, Constants.CONSUMER_SIDE);
 
+        // 运行时参数 (版本，时间戳，PID)
         appendRuntimeParameters(map);
         if (!isGeneric()) {
             String revision = Version.getVersion(interfaceClass, version);
@@ -277,12 +290,18 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 map.put(Constants.METHODS_KEY, StringUtils.join(new HashSet<String>(Arrays.asList(methods)), Constants.COMMA_SEPARATOR));
             }
         }
+
+        // 设置调用的 interface 名称
         map.put(Constants.INTERFACE_KEY, interfaceName);
+
         appendParameters(map, metrics);
         appendParameters(map, application);
         appendParameters(map, module);
+
+        // 消费者 config，删除 'default.' 前缀
+        // 重写设置 Constants.DEFAULT_KEY
         // remove 'default.' prefix for configs from ConsumerConfig
-        // appendParameters(map, consumer, Constants.DEFAULT_KEY);
+//         appendParameters(map, consumer, Constants.DEFAULT_KEY);
         appendParameters(map, consumer);
         appendParameters(map, this);
         Map<String, Object> attributes = null;
@@ -301,6 +320,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
         }
 
+        // 获取 register 地址，然后设置到 map
         String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);
         if (StringUtils.isEmpty(hostToRegistry)) {
             hostToRegistry = NetUtils.getLocalHost();
@@ -309,6 +329,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         map.put(Constants.REGISTER_IP_KEY, hostToRegistry);
 
+        // 创建 proxy
         ref = createProxy(map);
 
         String serviceKey = URL.buildKey(interfaceName, group, version);
@@ -331,13 +352,19 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
+
+        // jvm 的 refer
         if (shouldJvmRefer(map)) {
+
+            // 创建一个 jvm URL
             URL url = new URL(Constants.LOCAL_PROTOCOL, Constants.LOCALHOST_VALUE, 0, interfaceClass.getName()).addParameters(map);
+            // 获取 jvm invoker 对象
             invoker = REF_PROTOCOL.refer(interfaceClass, url);
             if (logger.isInfoEnabled()) {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
         } else {
+            // 用户指定的URL，可以是对方地址，也可以是注册中心的地址。
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
@@ -353,11 +380,22 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         }
                     }
                 }
-            } else { // assemble URL from register center's configuration
+            } else {
+
+                // 从注册中心的配置组装URL
+                // assemble URL from register center's configuration
+
+                // 如果协议不是 injvm
                 // if protocols not injvm checkRegistry
                 if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(getProtocol())){
+
+                    // 检查注册表配置是否存在，然后将其转换为 {@link RegistryConfig}
                     checkRegistry();
+
+                    // 加载注册中心地址，分为 provider 和 consumer
                     List<URL> us = loadRegistries(false);
+
+                    // 注册中心是否有 monitor 配置，存在添加到 map 稍后处理
                     if (CollectionUtils.isNotEmpty(us)) {
                         for (URL u : us) {
                             URL monitorUrl = loadMonitor(u);
@@ -373,9 +411,11 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
+            // 单个 Invoke
             if (urls.size() == 1) {
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else {
+                // 多个 Invoke 聚合调用，cluster
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
@@ -385,16 +425,22 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     }
                 }
                 if (registryURL != null) { // registry url is available
+                    // 仅当寄存器的集群可用时才使用registrayawarecluster
                     // use RegistryAwareCluster only when register's CLUSTER is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, RegistryAwareCluster.NAME);
+                    // 调用程序包装关系为：registray aware cluster invoker（staticdirectory）->failoverclusterinvoker（registrydirectory，will execute route）->invoker
                     // The invoker wrap relation would be: RegistryAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, will execute route) -> Invoker
                     invoker = CLUSTER.join(new StaticDirectory(u, invokers));
-                } else { // not a registry url, must be direct invoke.
+                } else {
+                    // 不是注册表URL，必须是直接调用。
+                    // not a registry url, must be direct invoke.
                     invoker = CLUSTER.join(new StaticDirectory(invokers));
                 }
             }
         }
 
+        // 1、检查服务是否存在
+        // 2、检查服务是否可用
         if (shouldCheck() && !invoker.isAvailable()) {
             // make it possible for consumer to retry later if provider is temporarily unavailable
             initialized = false;
@@ -412,6 +458,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             URL consumerURL = new URL(Constants.CONSUMER_PROTOCOL, map.remove(Constants.REGISTER_IP_KEY), 0, map.get(Constants.INTERFACE_KEY), map);
             metadataReportService.publishConsumer(consumerURL);
         }
+
+        // 创建 Service 代理对象
         // create service proxy
         return (T) PROXY_FACTORY.getProxy(invoker);
     }
@@ -442,10 +490,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     protected boolean shouldCheck() {
+        // 检查服务提供程序是否存在，如果不存在，将很快失败。
         Boolean shouldCheck = isCheck();
         if (shouldCheck == null && getConsumer() != null) {
             shouldCheck = getConsumer().isCheck();
         }
+
+        // 默认开启检查 true
         if (shouldCheck == null) {
             // default true
             shouldCheck = true;

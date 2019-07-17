@@ -36,6 +36,10 @@ public class ConsumerModel {
     private final Map<Method, ConsumerMethodModel> methodModels = new IdentityHashMap<Method, ConsumerMethodModel>();
 
     /**
+     * 此构造函数创建ConsumerModel的实例，传递的对象不应为空。
+     * 如果服务名称、服务实例、代理对象、方法不应为空。如果这些是空的
+     * 然后此构造函数将抛出@link illegalargumentexception
+     *
      *  This constructor create an instance of ConsumerModel and passed objects should not be null.
      *  If service name, service instance, proxy object,methods should not be null. If these are null
      *  then this constructor will throw {@link IllegalArgumentException}

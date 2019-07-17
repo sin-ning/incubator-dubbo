@@ -228,6 +228,7 @@ public class ExtensionLoader<T> {
                 }
 
                 // 匹配 需要激活的 group、并排除不是 names 中的 name
+                // 默认 group 为 null，全部激活
                 if (isMatchGroup(group, activateGroup)) {
                     // 其实这个可以放到 if 里面
                     T ext = getExtension(name);

@@ -269,7 +269,7 @@ public class DubboProtocol extends AbstractProtocol {
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
         exporterMap.put(key, exporter);
 
-        //export an stub service for dispatching event
+        // export an stub service for dispatching event
         Boolean isStubSupportEvent = url.getParameter(Constants.STUB_EVENT_KEY, Constants.DEFAULT_STUB_EVENT);
         Boolean isCallbackservice = url.getParameter(Constants.IS_CALLBACK_SERVICE, false);
         if (isStubSupportEvent && !isCallbackservice) {

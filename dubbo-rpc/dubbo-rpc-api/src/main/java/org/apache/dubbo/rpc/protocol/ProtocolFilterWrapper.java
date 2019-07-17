@@ -46,6 +46,8 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+
+        // 解析 URL 激活的 filter
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
@@ -102,9 +104,11 @@ public class ProtocolFilterWrapper implements Protocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 注册 Protocol 无需创建 filter 过滤连
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+        // 建立带有 Filter 过滤链的 Invoker ，再暴露服务。
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
