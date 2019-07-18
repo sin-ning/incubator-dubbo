@@ -169,6 +169,7 @@ public class RegistryProtocol implements Protocol {
 
         // 注册地址, 和服务提供者 bind 地址
         URL registryUrl = getRegistryUrl(originInvoker);
+        // 本地导出的URL
         // url to export locally
         URL providerUrl = getProviderUrl(originInvoker);
 
@@ -177,43 +178,65 @@ public class RegistryProtocol implements Protocol {
         //  the same service. Because the subscribed is cached key with the name of the service, it causes the
         //  subscription information to cover.
 
-        // 获取
+        // 订阅地址
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
+
+        // Reexport：导出器破坏协议中的问题
+        // TODO: 2019-07-17 Sin
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
-
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
 
-        // 暴露对于的远程服务
+        // 暴露本地服务（这里是 SPI 自适应的服务，默认为 DubboProtocol）
         // export invoker
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
-        // 注册服务
+        // 创建注册中心，并注册
         // url to registry
         final Registry registry = getRegistry(originInvoker);
+
+        // 注册中心 提供者地址(自己就是提供者，就是本地暴露的信息)
+        // URL：dubbo://127.0.0.1:9453/org.apache.dubbo.registry.protocol.DemoService:1.0.0?methods=test1,test2&notify=true&side=consumer
         final URL registeredProviderUrl = getRegisteredProviderUrl(providerUrl, registryUrl);
+
+        // 服务提供者 -> 注册到本地 table
+        // 获取 服务提供者 InvokerWrapper
         ProviderInvokerWrapper<T> providerInvokerWrapper = ProviderConsumerRegTable.registerProvider(originInvoker,
                 registryUrl, registeredProviderUrl);
-        //to judge if we need to delay publish
+
+        // 是否需要 登记
+        // 判断我们是否需要推迟发布
+        // to judge if we need to delay publish
         boolean register = registeredProviderUrl.getParameter("register", true);
         if (register) {
+            // 将 registerUrl 注册到 register
             register(registryUrl, registeredProviderUrl);
             providerInvokerWrapper.setReg(true);
         }
 
-        // 已弃用！订阅2.6.x或更高版本中的覆盖规则。
+        // 不推荐使用！ 订阅2.6.x或之前的覆盖规则。
         // Deprecated! Subscribe to override rules in 2.6.x or before.
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
-
+        // 设置注册地址
         exporter.setRegisterUrl(registeredProviderUrl);
+        // 设置订阅地址
         exporter.setSubscribeUrl(overrideSubscribeUrl);
-        //Ensure that a new exporter instance is returned every time export
+        // 确保每次导出时都返回一个新的导出器实例
+        // DestroyableExporter 是一个内部简单实现，数据是直接返回(没有任何额外操作)
+        // Ensure that a new exporter instance is returned every time export
         return new DestroyableExporter<>(exporter);
     }
 
+    // 重写配置文件中的 url
     private URL overrideUrlWithConfig(URL providerUrl, OverrideListener listener) {
+        // 重写提供者地址
         providerUrl = providerConfigurationListener.overrideUrl(providerUrl);
+
+        // 配置文件监听 如：更新通知 然后刷新配置
         ServiceConfigurationListener serviceConfigurationListener = new ServiceConfigurationListener(providerUrl, listener);
+
+        // 监听器放到 map 中缓存
+        // key: org.apache.dubbo.registry.protocol.DemoService:1.0.0
         serviceConfigurationListeners.put(providerUrl.getServiceKey(), serviceConfigurationListener);
         return serviceConfigurationListener.overrideUrl(providerUrl);
     }
@@ -353,23 +376,37 @@ public class RegistryProtocol implements Protocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+
         url = URLBuilder.from(url)
+                // 设置 Protocol 默认为 dubbo
                 .setProtocol(url.getParameter(REGISTRY_KEY, DEFAULT_REGISTRY))
+                // 删除 register
                 .removeParameter(REGISTRY_KEY)
                 .build();
+
+        // 获取注册中心
+        // ps：一般获取的是 FailBackRegister(失败重试特性) 下的 Register
         Registry registry = registryFactory.getRegistry(url);
+
+        // TODO: 2019-07-17 Sin
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
+        // 获得服务引用配置参数集合，将 url 转为 map 形式
         // group="a,b" or group="*"
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
         String group = qs.get(Constants.GROUP_KEY);
+
+        // 分组聚合，参见文档 http://dubbo.apache.org/zh-cn/docs/user/demos/group-merger.html
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
+                // TODO: 2019-07-17 sin 分组聚合
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
+
+        // 这里的 cluster 是 registerCluster 多个注册中心
         return doRefer(cluster, registry, type, url);
     }
 
@@ -378,21 +415,33 @@ public class RegistryProtocol implements Protocol {
     }
 
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
+        // 创建 RegistryDirectory 对象，并设置注册中心
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
+
+        // 注册中心 url 所有参数
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
+
+        // 构建订阅地址 URL
+        // TODO: 2019-07-17 Sin 删除 registerIP ？？
         URL subscribeUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
+
+        // 向注册中心注册自己（服务消费者）
         if (!ANY_VALUE.equals(url.getServiceInterface()) && url.getParameter(REGISTER_KEY, true)) {
             directory.setRegisteredConsumerUrl(getRegisteredConsumerUrl(subscribeUrl, url));
             registry.register(directory.getRegisteredConsumerUrl());
         }
+
+        // 向注册中心订阅服务提供者
         directory.buildRouterChain(subscribeUrl);
         directory.subscribe(subscribeUrl.addParameter(CATEGORY_KEY,
                 PROVIDERS_CATEGORY + "," + CONFIGURATORS_CATEGORY + "," + ROUTERS_CATEGORY));
 
+        // 伪装调用 (实际面像的是多个)，获取 Invoker 对象
         Invoker invoker = cluster.join(directory);
+        // 消费者 ->   注册到本地 table
         ProviderConsumerRegTable.registerConsumer(invoker, url, subscribeUrl, directory);
         return invoker;
     }
@@ -479,6 +528,11 @@ public class RegistryProtocol implements Protocol {
     }
 
     /**
+     * Reexport：导出器破坏协议中的问题
+     *  1.确保注册协议返回的出口商可以正常销毁
+     *  2.通知后无需重新注册到注册表
+     *  3.通过出口方式传递的调用者，最好是出口商的调用者
+     *
      * Reexport: the exporter destroy problem in protocol
      * 1.Ensure that the exporter returned by registryprotocol can be normal destroyed
      * 2.No need to re-register to the registry after notify
@@ -487,7 +541,6 @@ public class RegistryProtocol implements Protocol {
     private class OverrideListener implements NotifyListener {
         private final URL subscribeUrl;
         private final Invoker originInvoker;
-
 
         private List<Configurator> configurators;
 
@@ -566,6 +619,11 @@ public class RegistryProtocol implements Protocol {
         }
     }
 
+    /**
+     * ServiceConfiguration 配置文件监听
+     *
+     * - 如：配置文件更新通知
+     */
     private class ServiceConfigurationListener extends AbstractConfiguratorListener {
         private URL providerUrl;
         private OverrideListener notifyListener;
@@ -586,6 +644,11 @@ public class RegistryProtocol implements Protocol {
         }
     }
 
+    /**
+     * 提供者配置监听
+     *
+     * - 监听配置文件变化通知
+     */
     private class ProviderConfigurationListener extends AbstractConfiguratorListener {
 
         public ProviderConfigurationListener() {

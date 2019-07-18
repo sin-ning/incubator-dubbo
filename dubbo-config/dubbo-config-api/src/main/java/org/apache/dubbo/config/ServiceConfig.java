@@ -537,7 +537,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             }
         }
 
-        // 暴露 service
+        // 创建需要暴露 service 的 URL 地址
         // export service
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
@@ -594,16 +594,23 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                             registryURL = registryURL.addParameter(Constants.PROXY_KEY, proxy);
                         }
 
-                        Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        URL registerUrl = registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString());
+                        Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registerUrl);
+
+                        // 增强 invoker ，保存了 ServiceConfig 配置项
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                        // 暴露服务
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
                 } else {
                     Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, url);
+
+                    // 增强 invoker ，保存了 ServiceConfig 配置项
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                    // 暴露服务
                     Exporter<?> exporter = protocol.export(wrapperInvoker);
                     exporters.add(exporter);
                 }

@@ -76,6 +76,7 @@ public abstract class AbstractRegistry implements Registry {
     private final Set<URL> registered = new ConcurrentHashSet<>();
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<>();
     private final ConcurrentMap<URL, Map<String, List<URL>>> notified = new ConcurrentHashMap<>();
+    // 注册中心地址 (这里需要注意一下)
     private URL registryUrl;
     // Local disk cache file
     private File file;
@@ -83,12 +84,16 @@ public abstract class AbstractRegistry implements Registry {
     public AbstractRegistry(URL url) {
         // 保存一下 registerUrl
         setUrl(url);
+        // 启动文件保存计时器
         // Start file save timer
         syncSaveFile = url.getParameter(Constants.REGISTRY_FILESAVE_SYNC_KEY, false);
+        // 文件保存：文件名称 和 文件格式
+        // 当前用户系统目录/.dubbo/dubbo-register-application/应用名称.cache
         String filename = url.getParameter(Constants.FILE_KEY, System.getProperty("user.home") + "/.dubbo/dubbo-registry-" + url.getParameter(Constants.APPLICATION_KEY) + "-" + url.getAddress() + ".cache");
         File file = null;
         if (ConfigUtils.isNotEmpty(filename)) {
             file = new File(filename);
+            // 判断文件是否存在，不存在则创建
             if (!file.exists() && file.getParentFile() != null && !file.getParentFile().exists()) {
                 if (!file.getParentFile().mkdirs()) {
                     throw new IllegalArgumentException("Invalid registry cache file " + file + ", cause: Failed to create directory " + file.getParentFile() + "!");
@@ -101,6 +106,9 @@ public abstract class AbstractRegistry implements Registry {
         // When starting the subscription center,
         // we need to read the local cache file for future Registry fault tolerance processing.
         loadProperties();
+
+        // getBackupUrls() 备用地址，是获取url中的 backup，
+        // getBackupUrls() 保护两个地址，URL 自己本身，还有 url 中的地址
         notify(url.getBackupUrls());
     }
 
@@ -351,6 +359,7 @@ public abstract class AbstractRegistry implements Registry {
             return;
         }
 
+        // 订阅信息
         for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
             URL url = entry.getKey();
 

@@ -89,6 +89,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 .removeParameters(Constants.EXPORT_KEY, Constants.REFER_KEY)
                 .build();
         String key = url.toServiceStringWithoutResolving();
+        // 锁定注册表访问进程以确保注册表的单个实例
         // Lock the registry access process to ensure a single instance of the registry
         LOCK.lock();
         try {
@@ -96,14 +97,18 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
             if (registry != null) {
                 return registry;
             }
-            //create registry by spi/ioc
+            // 创建一个 注册中心 SPI机制
+            // create registry by spi/ioc
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }
+
+            // 缓存注册中心
             REGISTRIES.put(key, registry);
             return registry;
         } finally {
+            // 释放锁
             // Release the lock
             LOCK.unlock();
         }

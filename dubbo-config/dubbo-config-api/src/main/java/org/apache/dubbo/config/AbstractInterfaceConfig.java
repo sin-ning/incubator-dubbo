@@ -287,6 +287,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     }
 
     /**
+     * 加载注册表并将其转换为{@link URL}，优先级顺序为：system property> dubbo registry config
      *
      * Load the registry and conversion it to {@link URL}, the priority order is: system property > dubbo registry config
      *

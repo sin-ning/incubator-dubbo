@@ -35,6 +35,8 @@ import java.util.Optional;
 public interface Configurator extends Comparable<Configurator> {
 
     /**
+     * 获取配置器URL。
+     *
      * Get the configurator url.
      *
      * @return configurator url.
@@ -42,6 +44,8 @@ public interface Configurator extends Comparable<Configurator> {
     URL getUrl();
 
     /**
+     * 配置提供程序URL。
+     *
      * Configure the provider url.
      *
      * @param url - old provider url.
@@ -49,8 +53,8 @@ public interface Configurator extends Comparable<Configurator> {
      */
     URL configure(URL url);
 
-
     /**
+     * 将重写URL转换为映射以供重新引用时使用。 每次发送所有规则，网址将被重新组装和计算
      * Convert override urls to map for use when re-refer. Send all rules every time, the urls will be reassembled and
      * calculated
      *

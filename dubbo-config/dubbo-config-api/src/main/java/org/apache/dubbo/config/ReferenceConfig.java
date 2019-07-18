@@ -117,6 +117,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private String client;
 
     /**
+     * 用于对等调用的URL
+     *
      * The url for peer-to-peer invocation
      */
     private String url;
@@ -237,6 +239,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (ref == null) {
             init();
         }
+
+        // ref 是 init() 初始化后的 proxy 对象
         return ref;
     }
 
@@ -355,7 +359,6 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
         // jvm 的 refer
         if (shouldJvmRefer(map)) {
-
             // 创建一个 jvm URL
             URL url = new URL(Constants.LOCAL_PROTOCOL, Constants.LOCALHOST_VALUE, 0, interfaceClass.getName()).addParameters(map);
             // 获取 jvm invoker 对象
@@ -392,7 +395,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     // 检查注册表配置是否存在，然后将其转换为 {@link RegistryConfig}
                     checkRegistry();
 
-                    // 加载注册中心地址，分为 provider 和 consumer
+                    // 加载注册表并将其转换为{@link URL}，优先级顺序为：system property> dubbo registry config
                     List<URL> us = loadRegistries(false);
 
                     // 注册中心是否有 monitor 配置，存在添加到 map 稍后处理

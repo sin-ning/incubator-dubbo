@@ -68,6 +68,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         // 重试时间
         this.retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
 
+        // 因为重试任务不会很多。 128个蜱就足够了。
         // since the retry task will not be very much. 128 ticks is enough.
         retryTimer = new HashedWheelTimer(new NamedThreadFactory("DubboRegistryRetryTimer", true), retryPeriod, TimeUnit.MILLISECONDS, 128);
     }
@@ -257,14 +258,19 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     @Override
     public void unregister(URL url) {
         super.unregister(url);
+
+        // 删除失败注册信息
         removeFailedRegistered(url);
+        // 删除未注册失败
         removeFailedUnregistered(url);
         try {
+            //向服务器端发送取消请求
             // Sending a cancellation request to the server side
             doUnregister(url);
         } catch (Exception e) {
             Throwable t = e;
 
+            // 如果打开启动检测，则直接抛出异常。
             // If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
@@ -279,6 +285,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 logger.error("Failed to unregister " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
 
+            // 将失败的注册请求记录到失败的列表中，定期重试(注销请求)
             // Record a failed registration request to a failed list, retry regularly
             addFailedUnregistered(url);
         }

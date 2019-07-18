@@ -17,11 +17,15 @@
 package org.apache.dubbo.configcenter;
 
 /**
+ * 配置侦听器将在侦听的配置发生更改时收到通知。
+ *
  * Config listener, will get notified when the config it listens on changes.
  */
 public interface ConfigurationListener {
 
     /**
+     * 监听器回调方法。 一旦侦听器侦听的配置发生任何更改，侦听器就会收到此方法的通知。
+     *
      * Listener call back method. Listener gets notified by this method once there's any change happens on the config
      * the listener listens on.
      *

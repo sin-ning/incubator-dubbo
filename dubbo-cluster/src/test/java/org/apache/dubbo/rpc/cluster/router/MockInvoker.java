@@ -43,6 +43,7 @@ public class MockInvoker<T> implements Invoker<T> {
         return null;
     }
 
+    @Override
     public URL getUrl() {
         return url;
     }
@@ -52,6 +53,7 @@ public class MockInvoker<T> implements Invoker<T> {
         return available;
     }
 
+    @Override
     public Result invoke(Invocation invocation) throws RpcException {
         return null;
     }

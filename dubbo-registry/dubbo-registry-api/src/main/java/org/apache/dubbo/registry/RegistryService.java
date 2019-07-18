@@ -69,6 +69,17 @@ public interface RegistryService {
     void unregister(URL url);
 
     /**
+     * 订阅符合条件的注册数据，并在注册数据更改时自动推送。
+     * 订阅需要支持合同:
+     *
+     * 1.当URL设置check = false参数时。 注册失败时，不会抛出异常并在后台重试。点击
+     * 2.当URL设置category = routers时，它仅通知指定的分类数据。 多个分类用逗号分隔，并允许星号匹配，这表示订阅了所有分类数据
+     * 3.允许接口，组，版本和分类器作为条件查询，例如：interface = org.apache.dubbo.foo.BarService＆version = 1.0.0 <br>
+     * 4.查询条件允许星号匹配，订阅所有接口的所有版本的所有版本，例如，：接口= *＆组= *＆版本= *＆分类= *，点击
+     * 5.重新启动注册表和网络抖动时，有必要自动恢复订阅请求
+     * 6.允许具有相同URL但不同参数的URL共存，它们不能相互覆盖
+     * 7.当第一个通知完成然后返回时，必须阻止订阅过程
+     *
      * Subscribe to eligible registered data and automatically push when the registered data is changed.
      * <p>
      * Subscribing need to support contracts:<br>

@@ -50,6 +50,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 多播注册表
+ *
  * MulticastRegistry
  */
 public class MulticastRegistry extends FailbackRegistry {
@@ -65,12 +67,13 @@ public class MulticastRegistry extends FailbackRegistry {
 
     private final int multicastPort;
 
+    // 收到的注册信息
     private final ConcurrentMap<URL, Set<URL>> received = new ConcurrentHashMap<URL, Set<URL>>();
-
+    // 清理执行器
     private final ScheduledExecutorService cleanExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboMulticastRegistryCleanTimer", true));
-
+    // 清理回调 future
     private final ScheduledFuture<?> cleanFuture;
-
+    // 清理时间
     private final int cleanPeriod;
 
     private volatile boolean admin = false;
@@ -82,11 +85,18 @@ public class MulticastRegistry extends FailbackRegistry {
         }
         try {
             multicastAddress = InetAddress.getByName(url.getHost());
+
+            // 检查是否是 组播地址
             checkMulticastAddress(multicastAddress);
 
+            // 默认端口 1234
             multicastPort = url.getPort() <= 0 ? DEFAULT_MULTICAST_PORT : url.getPort();
+
+            // 创建组播地址
             multicastSocket = new MulticastSocket(multicastPort);
             NetUtils.joinMulticastGroup(multicastSocket, multicastAddress);
+
+            // 开启线程接收数据
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -110,17 +120,26 @@ public class MulticastRegistry extends FailbackRegistry {
                     }
                 }
             }, "DubboMulticastRegistryReceiver");
+
+            // 线程守护
             thread.setDaemon(true);
             thread.start();
         } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
+
+        // 清理时间
         this.cleanPeriod = url.getParameter(Constants.SESSION_TIMEOUT_KEY, Constants.DEFAULT_SESSION_TIMEOUT);
+
+        // 是否清理，默认为 true
         if (url.getParameter("clean", true)) {
+
+            // 开启一个线程，定时清理
             this.cleanFuture = cleanExecutor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     try {
+                        // 清除暴露的信息
                         clean(); // Remove the expired
                     } catch (Throwable t) { // Defensive fault tolerance
                         logger.error("Unexpected exception occur at clean expired provider, cause: " + t.getMessage(), t);
@@ -156,6 +175,7 @@ public class MulticastRegistry extends FailbackRegistry {
                         if (logger.isWarnEnabled()) {
                             logger.warn("Clean expired provider " + url);
                         }
+                        // 取消注册
                         doUnregister(url);
                     }
                 }
@@ -212,6 +232,7 @@ public class MulticastRegistry extends FailbackRegistry {
     }
 
     private void multicast(String msg) {
+        // 广播信息
         if (logger.isInfoEnabled()) {
             logger.info("Send multicast message: " + msg + " to " + multicastAddress + ":" + multicastPort);
         }
@@ -225,6 +246,7 @@ public class MulticastRegistry extends FailbackRegistry {
     }
 
     private void unicast(String msg, String host) {
+        // 单波信息
         if (logger.isInfoEnabled()) {
             logger.info("Send unicast message: " + msg + " to " + host + ":" + multicastPort);
         }
@@ -244,6 +266,7 @@ public class MulticastRegistry extends FailbackRegistry {
 
     @Override
     public void doUnregister(URL url) {
+        // 广播 xxx 取消注册了
         multicast(Constants.UNREGISTER + " " + url.toFullString());
     }
 
